@@ -1,4 +1,4 @@
-import Testing.textBeltAPI as textBeltAPI
+import textBeltAPI as textBeltAPI
 import time
 
 class TemperatureSimulation:
