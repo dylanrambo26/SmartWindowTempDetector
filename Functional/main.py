@@ -7,17 +7,25 @@ import network
 
 from picozero import pico_temp_sensor
 import my_network
+import ap_config
 import textBeltAPI
-import smart_window_web_server
 
+LOW_THRESH = 68
+HIGH_THRESH = 85
 
-LOW_THRESH = 55
-HIGH_THRESH = 90
-
-SSID = 'SSID'
-PASSWORD = 'PASSWORD'
+SSID = None
+PASSWORD = None
 
 WLAN_CHECK = 10  #check connection every 10 seconds
+
+def url_decode(cred):
+    cred = cred.replace('+', ' ')
+    cred = cred.replace('%26', '&')    # &
+    cred = cred.replace('%21', '!')    # !
+    cred = cred.replace('%5F', '_')    # _
+    cred = cred.replace('%28', '(')    # (
+    cred = cred.replace('%29', ')')    # )
+    return cred
 
 def ensure_connection(sta_if, ssid, password, last_attempt):
     if sta_if.isconnected():
@@ -85,6 +93,37 @@ def celsius_to_faren(temp_c):
 
 def main ():
 
+    #_thread.start_new_thread(smart_window_web_server.start_server, ())
+    #smart_window_web_server.load_config()
+    global SSID
+    global PASSWORD
+    
+    if not SSID or not PASSWORD:
+        print("Running AP to get Credentials")
+        
+        """
+        _thread.start_new_thread(ap_config.run_server, ())
+        
+        #wait fro globals to update
+        while ap_config.wifi_ssid is None and ap_config.wifi_password is None:
+            print(f"Waiting for global Update")
+            sleep(6)
+            
+        SSID = ap_config.wifi_ssid
+        PASSWORD = ap_config.wifi_password
+        """
+        ap_config.run_server()  # blocking, waits for POST
+        SSID = ap_config.wifi_ssid
+        PASSWORD = ap_config.wifi_password
+    
+    SSID = url_decode(ap_config.wifi_ssid)
+    PASSWORD = url_decode(ap_config.wifi_password)
+    
+    sleep(2)
+    print(f"creds: {SSID} {PASSWORD}")
+    
+    #put thermo in the thread rather than the web server
+
     my_network.connect(SSID, PASSWORD)
     print('connected')
     
@@ -93,6 +132,7 @@ def main ():
     
 if __name__ == "__main__":
     main()
+    
     
 
 
